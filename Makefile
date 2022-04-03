@@ -1,6 +1,6 @@
 # Compiler settings
-CC = gcc
-PERFFLAGS = -std=gnu11 -O0 -Werror -fsanitize=address -pthread
+CC = clang
+PERFFLAGS = -gfull -O0 -Werror -fsanitize=address -pthread
 TESTFLAGS = -std=gnu11 -g -O0 -Werror --coverage -fsanitize=address -pthread
 LDFLAGS =
 
@@ -10,11 +10,10 @@ EXT = .c
 SRCDIR = src
 OBJDIR = obj
 
-SRC = $(wildcard $(SRCDIR)/*$(EXT))
-OBJ = $(SRC:$(SRCDIR)/%$(EXT)=$(OBJDIR)/%.o)
+SRC = src/baseline.c src/efficient.c
+OBJ = obj/baseline.o obj/efficient.o
 
 RM = rm
-DELOBJ = $(OBJ)
 
 # Targets
 all: CFLAG=PERFFLAGS
@@ -22,15 +21,25 @@ all: CFLAG=PERFFLAGS
 # Test
 tests: CFLAG=TESTFLAGS
 
-all tests: $(OBJ)
+all tests: baseline efficient
+
+baseline: obj/baseline.o
+
+efficient: obj/efficient.o
+
+obj/baseline.o: src/baseline.c
+	$(CC) $(PERFFLAGS) -o $@ $<
+
+obj/efficient.o: src/efficient.c
+	$(CC) -D$(PERFFLAGS) -o $@ $<
 
 # Building rule for .o files and its .c/.cpp in combination with all .h
-$(OBJDIR)/%.o: $(SRCDIR)/%$(EXT)
-	$(CC) -D$(CFLAG) -o $@ $<
+#$(OBJDIR)/%.o: $(SRCDIR)/%$(EXT)
+#	$(CC) -D$(CFLAG) -o $@ $<
 
 # Cleaning rules
 .PHONY: clean
 clean:
-	$(RM) $(DELOBJ)
+	$(RM) $(OBJ)
 
 

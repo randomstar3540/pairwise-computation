@@ -1,11 +1,7 @@
-#include <stdint.h>
-#include <stdio.h>
-#include <pthread.h>
 #include "include/baseline.h"
 
-pthread_mutex_t lock;
 
-void print_matrix(int M, int N, int64_t* matrix[]){
+void print_matrix(int M, int N, int64_t (*matrix)[M]){
     for(int i = 0; i < N; i ++) {
         for(int j = 0; j < M; j ++) {
             printf("%lld ", matrix[i][j]);
@@ -16,8 +12,15 @@ void print_matrix(int M, int N, int64_t* matrix[]){
     }
 }
 
+void print_result(int64_t* result, int length){
+    for (int i = 0; i < length; i ++) {
+        printf("%lld    ", result[i]);
+    }
+    printf("\n\n");
+}
+
 int64_t compute_dot_product(int64_t* A, int64_t* B, int length){
-    int64_t result;
+    int64_t result = 0;
     for(int i = 0; i < length; i ++){
         // A·B = Sum(A[i] * B[i]) for i: 0 -> M-1
         result += A[i] * B[i];
@@ -25,6 +28,41 @@ int64_t compute_dot_product(int64_t* A, int64_t* B, int length){
     return result;
 }
 
+void locate(int target, int N, int * const result){
+    // Compute the index of the two row we are going to compute
+    // From the index of the result
+    int first = 0;
+    while(target >= N){
+        target -= N;
+        N --;
+        first ++;
+    }
+    result[0] = first;
+    result[1] = target + first;
+}
+
+int pairwise_computation(void * args){
+    // Thread function, compute the works assigned
+    struct thread_args * p = (struct thread_args *) args;
+    int starts = p->starts;
+    int size = p->size;
+    int M = p->M;
+    int N = p->N;
+    int64_t * matrix = p->matrix;
+    int64_t * result = p->result;
+
+    int idx[2];
+    for(int i = starts; i < starts + size; i ++){
+        locate(i, N, idx); // Locate the rows we are going to use
+
+        // Compute and store
+        result[i] = compute_dot_product(matrix + M * idx[0], matrix + M * idx[1], M);
+#ifdef DEBUG_ON
+        printf("result[%d] : %lld\n\n", i , result[i]);
+#endif
+    }
+    return 0;
+}
 
 int main(){
 
@@ -33,21 +71,111 @@ int main(){
     int M, N;
     scanf("%d",&M);
     scanf("%d",&N);
+
+#ifdef DEBUG_ON
     printf("We got M: %d, N: %d\n", M, N);
+#endif
 
     // Declare 2D array and the result array
-    int64_t matrix[N][M];
-    int64_t result[N * (N + 1) / 2];
+
+    int64_t result[RESULT_LEN];
+    pthread_t t[THREAD_NUM];
 
     //Scan the matrix
+    if (N == 1 && M == 1){
+        //Only one number in the matrix
+        int64_t res;
+        scanf("%lld ",&res);
+        printf("%lld\n", res);
+        return 0;
+    } else if (N == 1){
+        int64_t matrix[M];
+        for(int i = 0; i < M; i ++){
+            scanf("%lld ",&matrix[i]);
+        }
+        int64_t res = compute_dot_product(matrix, matrix, M);
+        printf("%lld\n", res);
+        return 0;
+
+    } else if (M == 1){
+        int64_t matrix[N];
+        int idx = 0;
+        for(int i = 0; i < N; i ++){
+            scanf("%lld ",&matrix[i]);
+            printf("%lld  ", matrix[i]);
+        }
+        printf("\n");
+        for (int i = 0; i < N; ++i) {
+            for (int j = i; j < N; ++j) {
+                result[idx] = matrix[i] * matrix[j];
+                idx ++;
+            }
+        }
+        print_result(result, RESULT_LEN);
+        return 0;
+    }
+
+    int64_t (*matrix)[M] = calloc(1, sizeof(int64_t) * M * N);
+
     for(int i = 0; i < N; i ++){
         for(int j = 0; j < M; j ++){
             scanf("%lld ",&matrix[i][j]);
         }
     }
 
-    //Init mutex lock
-    pthread_mutex_init(&lock, NULL);
+#ifdef DEBUG_ON
+    print_matrix(M, N, matrix);
+    printf("\n");
+#endif
+    struct thread_args args[THREAD_NUM];
 
+    if (PAIR_PER_THREAD == 0){
+        for(int i = 0; i < RESULT_LEN; i ++){
+            args[i].starts = i;
+            args[i].size = PAIR_PER_THREAD;
+            args[i].M = M;
+            args[i].N = N;
+            args[i].matrix = matrix[0];
+            args[i].result = result;
+
+            pthread_create(&t[i], NULL, (void * )pairwise_computation, args);
+        }
+
+        for (int i = 0; i < RESULT_LEN; i++) {
+                pthread_join(t[i], NULL);
+        }
+    }else{
+        int tid = 0;
+        for(int i = 0; i < RESULT_LEN - PAIR_REMINDER; i += PAIR_PER_THREAD){
+            args[tid].starts = i;
+            args[tid].size = PAIR_PER_THREAD;
+            args[tid].M = M;
+            args[tid].N = N;
+            args[tid].matrix = matrix[0];
+            args[tid].result = result;
+
+            pthread_create(&t[tid], NULL, (void * )pairwise_computation, &args[tid]);
+            tid ++;
+        }
+
+        if(PAIR_REMINDER != 0){
+            args[tid].starts = RESULT_LEN - PAIR_REMINDER;
+            args[tid].size = PAIR_REMINDER;
+            args[tid].M = M;
+            args[tid].N = N;
+            args[tid].matrix = matrix[0];
+            args[tid].result = result;
+
+            pthread_create(&t[tid], NULL, (void * )pairwise_computation, &args[tid]);
+        }
+
+        for (int i = 0; i < THREAD_NUM; i++) {
+            pthread_join(t[i], NULL);
+        }
+    }
+
+    free(matrix);
+
+    print_result(result, RESULT_LEN);
     return 0;
 }
