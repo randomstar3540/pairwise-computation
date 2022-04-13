@@ -1,7 +1,7 @@
 # Compiler settings
 CC = clang
-PERFFLAGS = -gfull -O0 -Werror -fsanitize=address -pthread
-TESTFLAGS = -std=gnu11 -g -O0 -Werror --coverage -fsanitize=address -pthread
+PERFFLAGS = -std=gnu11 -O0 -Werror -lprofiler -pthread
+TESTFLAGS = -std=gnu11 -g -O0 -Werror --coverage -lprofiler -fsanitize=address -pthread
 LDFLAGS =
 
 # Makefile settings
@@ -31,7 +31,7 @@ obj/baseline.o: src/baseline.c
 	$(CC) $(PERFFLAGS) -o $@ $<
 
 obj/efficient.o: src/efficient.c
-	$(CC) -D$(PERFFLAGS) -o $@ $<
+	$(CC) $(PERFFLAGS) -o $@ $<
 
 # Building rule for .o files and its .c/.cpp in combination with all .h
 #$(OBJDIR)/%.o: $(SRCDIR)/%$(EXT)
