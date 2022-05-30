@@ -13,23 +13,23 @@ In this assignment, we want to calculate a dot product for every possible pair o
 
 ## Parallel algorithm design and implementation
 
-We can visualise our calculation process as the following graph. The diagram below shows the flow of our baseline algorithm in a matrix with N=8 and THREAD_NUM = 4. Where the colour assigned to each box represents the thread to which it is assigned. The text “(0,1)” means it is the dot product of row 0 and row 1. After computing (0,1) we will go to the next value in the linear order, which is (0,2). This algorithm is effective but has a lot of room for improvement. Here's how we improve it.![image-20220413154910884](/Users/amia/Library/Application Support/typora-user-images/image-20220413154910884.png).
+We can visualise our calculation process as the following graph. The diagram below shows the flow of our baseline algorithm in a matrix with N=8 and THREAD_NUM = 4. Where the colour assigned to each box represents the thread to which it is assigned. The text “(0,1)” means it is the dot product of row 0 and row 1. After computing (0,1) we will go to the next value in the linear order, which is (0,2). This algorithm is effective but has a lot of room for improvement. Here's how we improve it.![image-20220413154910884](image/image-20220413154910884.png).
 
 ###  Improving locality By redesign the computation order 
 
 Therefore, the first optimisation we made was to adjust the order of the calculations in order to increase the usage of each read. As shown in the diagram below, the different colours represent the different iteration in the calculation. In this algorithm, we always give preference to a block that has the information we have just read. For example, after we did the computation of (0,2), we will pick (2,2) for next. As we just read the 2nd row during the computation of (0,2) and we assume that it will still keep in cache, results in faster read speeds and thus less time required for calculations. Once we finish the calculation of the outermost layer, we move on to the next layer, which is the calculation of the other colour in the figure.
 
-![](/Users/amia/Library/Application Support/typora-user-images/image-20220413160322290.png)
+![](image/image-20220413160322290.png)
 
 In multi-threaded computation, in order to increase the usage of data while increasing the usage of multiple cores, we distribute the computation tasks evenly to each thread, as shown in the figure below. We want each thread to be assigned roughly the same number of tasks throughout the computation, so we have chosen to assign them by the sequential order. However, as shown in the figure below, when N=8 and T = 4, the number of computation tasks assigned to each thread is not the same and the difference is quite large. Thread1 only needs to compute 6 times but thread4 needs to compute 12 times. But that will only happened with small number of N. When the value of N goes larger, that is, when we have more rows, the number of computational tasks assigned to each thread will tend to be the same.
 
-![image-20220413163150208](/Users/amia/Library/Application Support/typora-user-images/image-20220413163150208.png)
+![image-20220413163150208](image/image-20220413163150208.png)
 
 ### Blocking
 
 Also, in order to optimise the cache performance, during the calculation, we simultaneously distribute the entire matrix evenly into an equal number of blocks. The length (number of columns) in each blocks are user customised, and the width (number of rows) in each box is set to be equal to the number of THREAD_NUM (which is how many threads we are going to use). Because, as mentioned above, we want to ensure that each thread is allocated about the same amount of computation, the width of the block will be smaller compared to the length.
 
-![image-20220413184056451](/Users/amia/Library/Application Support/typora-user-images/image-20220413184056451.png)
+![image-20220413184056451](image/image-20220413184056451.png)
 
 For example, assume we have a matrix with 4 rows and 8 columns, and we have BSZIE = 4 and THREAD_NUM = 2, then we will distribute the matrix into 4 blocks. The number of the blocks are from left to right, then up and down.
 
@@ -37,7 +37,7 @@ For each dot product of a block computation, we will take the dot product of all
 
 Here’s a example graph shows each step of a dot computation of two blocks.
 
-![image-20220413184126204](/Users/amia/Library/Application Support/typora-user-images/image-20220413184126204.png)
+![image-20220413184126204](image/image-20220413184126204.png)
 
 ### Loop Unrolling
 
@@ -47,7 +47,7 @@ We used loop unrolling in the dot computation process of each row.  As we want t
 
 Here’s a screenshot of one piece of code in our source code.
 
-![image-20220413184309725](/Users/amia/Library/Application Support/typora-user-images/image-20220413184309725.png)
+![image-20220413184309725](image/image-20220413184309725.png)
 
 
 
@@ -61,19 +61,19 @@ Group 1: Four files. Each file contains 20 matrix that with random column and ro
 
 Here’s the performance result from each file, with BSIZE = 16/32 and THREAD_NUM = 4/8.
 
-![](/Users/amia/Library/Application Support/typora-user-images/image-20220413200346288.png)
+![](image/image-20220413200346288.png)
 
 Group 2: Four files. Each file contains 20 matrix that with random column and rows. The number of columns and rows (or, M and N) are smaller than 2500.
 
-![image-20220413200627224](/Users/amia/Library/Application Support/typora-user-images/image-20220413200627224.png)
+![image-20220413200627224](image/image-20220413200627224.png)
 
 Group 3: Matrix has M = N, M starts from 50 to 950 and differs by 50. For each M we compute 20 matrix with random generated values.
 
-![image-20220413203124843](/Users/amia/Library/Application Support/typora-user-images/image-20220413203124843.png)
+![image-20220413203124843](image/image-20220413203124843.png)
 
 This is the result generates from the Google CPU profiler, with computing the largest dataset (dataset 7). The statistics of the locations where the sampling occurred are shown in the figure. The number of samples is sufficient enough that allowing us to  investigate the internal operating, or the efficiency of our program.
 
-![image-20220413204423112](/Users/amia/Library/Application Support/typora-user-images/image-20220413204423112.png)
+![image-20220413204423112](image/image-20220413204423112.png)
 
 ## Discussion
 
