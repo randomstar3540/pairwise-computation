@@ -10,8 +10,8 @@
 #define PAIR_PER_THREAD (RESULT_LEN / THREAD_NUM)
 #define BSIZE 32
 
-#define PROFILING
-//#define SELF_CHECK
+//#define PROFILING
+#define SELF_CHECK
 //#define DEBUG_ON
 
 struct thread_args{

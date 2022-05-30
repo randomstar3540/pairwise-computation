@@ -35,7 +35,7 @@ void print_arr(int64_t *arr, int length) {
 // Default size is equal to BSIZE
 int64_t compute_dot_product(const int64_t *A, const int64_t *B, const int64_t size) {
     int64_t result = 0;
-    if (size >= 16){
+    if (size % 16 == 0){
         for (int i = 0; i < size; i+=16) {
             // A·B = Sum(A[i] * B[i]) for i: 0 -> M-1
             result += A[i] * B[i];
@@ -56,7 +56,7 @@ int64_t compute_dot_product(const int64_t *A, const int64_t *B, const int64_t si
             result += A[i + 15] * B[i + 15];
         }
         return result;
-    }else if (size >= 8){
+    }else if (size % 8 == 0){
         for (int i = 0; i < size; i+=8) {
             // A·B = Sum(A[i] * B[i]) for i: 0 -> M-1
             result += A[i] * B[i];
@@ -69,7 +69,7 @@ int64_t compute_dot_product(const int64_t *A, const int64_t *B, const int64_t si
             result += A[i + 7] * B[i + 7];
         }
         return result;
-    }else if (size >= 4){
+    }else if (size % 4 == 0){
         for (int i = 0; i < size; i+=4) {
             // A·B = Sum(A[i] * B[i]) for i: 0 -> M-1
             result += A[i] * B[i];
@@ -292,8 +292,10 @@ int main() {
 #endif
 
     while (!feof(stdin)) {
+        printf("Please enter M and N\n");
         scanf("%d", &M);
         scanf("%d", &N);
+        printf("Please enter the elements in the matrix\n");
 
 #ifdef DEBUG_ON
         printf("We got M: %d, N: %d\n", M, N);
@@ -318,7 +320,7 @@ int main() {
             compute_matrix(M, N, result);
         }
         // handle result
-//        print_arr(result, RESULT_LEN);
+        print_arr(result, RESULT_LEN);
         free(result);
     }
 

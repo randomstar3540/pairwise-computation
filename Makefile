@@ -1,17 +1,19 @@
 # Compiler settings
 CC = clang
+MPICC = mpicc
 PERFFLAGS = -std=gnu11 -O0 -Werror -lprofiler -pthread
-TESTFLAGS = -std=gnu11 -g -O0 -Werror --coverage -lprofiler -fsanitize=address -pthread
+TESTFLAGS = -std=gnu11 -O0 -Werror -pthread
+MPIFLAG = -pthread
 LDFLAGS =
 
 # Makefile settings
-APPNAME = baseline efficient
+APPNAME = distributed efficient
 EXT = .c
 SRCDIR = src
 OBJDIR = obj
 
-SRC = src/baseline.c src/efficient.c
-OBJ = obj/baseline.o obj/efficient.o
+SRC = src/distributed.c src/efficient.c
+OBJ = obj/distributed.o obj/efficient.o
 
 RM = rm
 
@@ -21,17 +23,17 @@ all: CFLAG=PERFFLAGS
 # Test
 tests: CFLAG=TESTFLAGS
 
-all tests: baseline efficient
+all tests: distributed efficient
 
-baseline: obj/baseline.o
+distributed: obj/distributed.o
 
 efficient: obj/efficient.o
 
-obj/baseline.o: src/baseline.c
-	$(CC) $(PERFFLAGS) -o $@ $<
+obj/distributed.o: src/distributed.c
+	$(MPICC) $(MPIFLAG) -o $@ $<
 
 obj/efficient.o: src/efficient.c
-	$(CC) $(PERFFLAGS) -o $@ $<
+	$(CC) $(TESTFLAGS) -o $@ $<
 
 # Building rule for .o files and its .c/.cpp in combination with all .h
 #$(OBJDIR)/%.o: $(SRCDIR)/%$(EXT)
