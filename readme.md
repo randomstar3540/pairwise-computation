@@ -1,4 +1,10 @@
 # All Pairwise Computation
+
+## This is an assignment for COMP5426 2022 S1
+
+Failure to comply with the Student Plagiarism: Coursework Policy and Procedure can lead to severe penalties as outlined under Chapter 8 of the University of Sydney By-Law 1999 (as amended). These penalties may be imposed in cases where any significant portion of my submitted work has been copied without proper acknowledgement from other sources, including published works, the Internet, existing programs, the work of other students, or work previously submitted for other awards or assessments.
+
+## Introduction
 All Pairwise Computation is defined as performing computation (e.g., correlations) between  
 every pair of the elements in a given dataset. In this assignment, we consider a set of N  
 sequences, each being of length M, which are stored in a two-dimensional (2D) matrix of size  
